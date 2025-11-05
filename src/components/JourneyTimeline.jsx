@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { MapPin, Milestone } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 const milestones = [
   {
@@ -34,10 +34,21 @@ export default function JourneyTimeline() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], [0, -80]);
 
+  // Mouse reactive background drift
+  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
+  function onMove(e) {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    setMouse({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height });
+  }
+
   return (
-    <section id="journey" ref={ref} className="relative w-full bg-[#0A0A0A] py-24 text-white">
-      {/* Subtle parallax stars grid */}
-      <motion.div style={{ y }} className="pointer-events-none absolute inset-0 opacity-50">
+    <section id="journey" ref={ref} onMouseMove={onMove} className="relative w-full bg-[#0A0A0A] py-24 text-white">
+      {/* Subtle parallax star grid */}
+      <motion.div
+        style={{ y, x: (mouse.x - 0.5) * 20 }}
+        className="pointer-events-none absolute inset-0 opacity-50"
+      >
         <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
@@ -47,6 +58,15 @@ export default function JourneyTimeline() {
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
       </motion.div>
+
+      {/* Glow that follows cursor */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            `radial-gradient(500px circle at ${mouse.x * 100}% ${mouse.y * 100}%, rgba(56,189,248,0.06), transparent 40%)`,
+        }}
+      />
 
       <div className="relative mx-auto max-w-6xl px-6">
         <div className="mb-12 flex items-center gap-3">
